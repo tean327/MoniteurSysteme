@@ -3,6 +3,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
+#include<unistd.h>
 
 
 ProcessInfo *GetProcessList()
@@ -168,11 +169,54 @@ void PrintProcesses(ProcessInfo* head)
      if(!head)
         return;
     ProcessInfo* crrnt = head->next;
+    // while(crrnt)
+    // {
+    //     usleep(100000);
+    //     printf("PROCESS: %s, PID: %d, STATE: %c, NBTicks: %lu, Memory: %lu, CPU USAGE: %f\n", crrnt->name, crrnt->pid, crrnt->state, crrnt->nbTicksB, crrnt->memoryInsideRAM, crrnt->cpuPer);
+    //     crrnt = crrnt->next;
+    // }
+    ProcessInfo** sorted = SortByUsage(head); 
+    for(int i = 0; i < 15; i++)
+    {
+        printf("PROCESS: %s, PID: %d, STATE: %c, NBTicks: %lu, Memory: %lu, CPU USAGE: %f\n", sorted[i]->name, sorted[i]->pid, sorted[i]->state, sorted[i]->nbTicksB, sorted[i]->memoryInsideRAM, sorted[i]->cpuPer);
+    }
+}
+
+ProcessInfo** SortByUsage(ProcessInfo* head)
+{
+
+    ProcessInfo ** sorted = (ProcessInfo**)malloc(sizeof(ProcessInfo*)*15);
+    
+    for(int i = 0; i < 15; i++)
+    {
+        sorted[i] = (ProcessInfo*)malloc(sizeof(ProcessInfo));
+    }
+
+    if(!head)
+        return NULL;
+    ProcessInfo* crrnt = head->next;
     while(crrnt)
     {
-        printf("PROCESS: %s, PID: %d, STATE: %c, NBTicks: %lu, Memory: %lu, CPU USAGE: %f\n", crrnt->name, crrnt->pid, crrnt->state, crrnt->nbTicksB, crrnt->memoryInsideRAM, crrnt->cpuPer);
+        for(int i = 0; i < 15; i++)
+        {
+            if(crrnt->cpuPer > sorted[i]->cpuPer)
+            {
+                ProcessInfo* tmp = sorted[i];
+                sorted[i] = crrnt;
+                for(int j = i+1;j < 14; j++)
+                {
+                    ProcessInfo* tmp2 = sorted[j+1];
+                    sorted[j+1] = sorted[j];
+                    sorted[j] = tmp;
+                    tmp = tmp2;
+                }
+                break;
+            }
+        }
         crrnt = crrnt->next;
     }
+
+    return sorted;
 }
 
 void FreeProcessList(ProcessInfo* head)

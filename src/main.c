@@ -10,30 +10,35 @@
 
 int main(void)
 {
-    GetCPUTicks();
-    MemoryInfo* memInfo = (MemoryInfo*)malloc(sizeof(MemoryInfo));
-
-    if(ReadMemoryInfo(memInfo) != 0)
+    while(1)
     {
-        fprintf(stderr, "Impossible de lire la memoire\n");
-        return 1;
-    }
+        printf("--------------------------------------------------------------------------------\n");
+        GetCPUTicks();
+        MemoryInfo* memInfo = (MemoryInfo*)malloc(sizeof(MemoryInfo));
 
-    unsigned long used = memInfo->totalKb - memInfo->availableKb;
-    printf("RAM : %lu / %lu Mo (%.1f %%)\n",
-           used / 1024, memInfo->totalKb / 1024,
-           100.0 * used / memInfo->totalKb);
+        if(ReadMemoryInfo(memInfo) != 0)
+        {
+            fprintf(stderr, "Impossible de lire la memoire\n");
+            return 1;
+        }
 
-    printf("CPU: %f%%\n", ReturnCPUPourc());
-    free(memInfo);
+        unsigned long used = memInfo->totalKb - memInfo->availableKb;
+        printf("RAM : %lu / %lu Mo (%.1f %%)\n",
+            used / 1024, memInfo->totalKb / 1024,
+            100.0 * used / memInfo->totalKb);
 
-    ProcessInfo *head = GetProcessList();
-    sleep(1);
-    if(head)
-    {
-        GetTicksB(head);
-        PrintProcesses(head);
-        FreeProcessList(head);
+        printf("CPU: %f%%\n", ReturnCPUPourc());
+        free(memInfo);
+
+        ProcessInfo *head = GetProcessList();
+        sleep(1);
+        if(head)
+        {
+            GetTicksB(head);
+            PrintProcesses(head);
+            FreeProcessList(head);
+        }
+        sleep(1);
     }
     return 0;
 }

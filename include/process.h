@@ -20,4 +20,5 @@ unsigned long ReadStat(int PID);
 void GetTicksB(ProcessInfo* head);
 double CalculCPUPer(ProcessInfo* process, int cpuTicks);
 void PrintProcesses(ProcessInfo* head);
+ProcessInfo** SortByUsage(ProcessInfo* head);
 #endif
