@@ -13,6 +13,8 @@ int ReadCPUInfo(CpuInfo* out)
 
     int found = 0;
     unsigned long user, nice, system, idle, iowait, irq, softirq, steal;
+    //On lit seulement la première ligne du fichier
+    //Elle ressemble a qql chose comme ca: cpu  80124 226 36210 17283980 5488 0 276 0 0 0
     if (fscanf(f, "cpu %lu %lu %lu %lu %lu %lu %lu %lu\n", &user, &nice, &system, &idle, &iowait, &irq, &softirq, &steal) == 8)
         found++;
 
@@ -33,7 +35,7 @@ double ReturnCPUPourc()
         return 1;
     }
 
-    sleep(1);
+    usleep(100000);
 
     if(ReadCPUInfo(&b) != 0)
     {

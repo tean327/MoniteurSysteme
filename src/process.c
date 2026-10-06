@@ -24,6 +24,7 @@ ProcessInfo *GetProcessList()
     }
 
     head->next = NULL;
+    head->name = NULL;
 
     char buffer[500];
     fgets(buffer, sizeof(buffer), pipe);
@@ -33,7 +34,8 @@ ProcessInfo *GetProcessList()
     {
         ProcessInfo* process = (ProcessInfo*)malloc(sizeof(ProcessInfo));
         if(!process)
-            return NULL;
+            break;
+        process->next = NULL;
         char state;
         int uid, pid, ppid, c, pri, ni, rss, sz;
         char wchan[50], tty[50], time[50], name[50];
@@ -43,14 +45,9 @@ ProcessInfo *GetProcessList()
             process->pid = pid;
             process->name = strdup(name);
 
-            int h, m, s;
-            if(sscanf(time, "%d:%d:%d", &h, &m, &s) == 3)
-                process->nbTicksA = (h*3600+m*60+s) * cpuTickNb;
-            
-            process->nbTicksB = ReadStat(process->pid);
+            process->nbTicksA = ReadStat(process->pid);
             process->memoryInsideRAM = GetMemoryInsideRAM(process->pid);
 
-            printf("PROCESS: %s, PID: %d, STATE: %c, NBTicks: %lu/%lu, Memory: %lu\n", process->name, process->pid, process->state, process->nbTicksA, process->nbTicksB,process->memoryInsideRAM);
             if(!AddEndProcessList(head, process))
             {   
                 free(process->name);
@@ -121,7 +118,7 @@ unsigned long  ReadStat(int PID)
     int pid, ppid, pgrp, session, tty_nr, tpgid;
     unsigned int flags;
     unsigned long minflt, cminflt, majflt, cmajflt;
-    unsigned long long utime, stime;
+    unsigned long long utime = 0, stime = 0;
     char name[50];
     char state;
 
@@ -129,15 +126,53 @@ unsigned long  ReadStat(int PID)
     {
         char *open  = strchr(line, '(');
         char *close = strrchr(line, ')');
-        if (!open || !close || close < open) return -1;
+        if (!open || !close || close < open)
+        {
+            fclose(stat);
+             return 0;
+        }
 
         if (sscanf(close+2, "%c %d %d %d %d %d %u %lu %lu %lu %lu %llu %llu",
-            &state, &ppid, &pgrp, &session, &tty_nr, &tpgid, &flags, &minflt, &cminflt, &majflt, &cmajflt, &utime, &stime) == 15)
+            &state, &ppid, &pgrp, &session, &tty_nr, &tpgid, &flags, &minflt, &cminflt, &majflt, &cmajflt, &utime, &stime) == 13)
             break;
     }
 
     fclose(stat);
     return utime + stime;
+}
+
+void GetTicksB(ProcessInfo* head)
+{
+    if(!head)
+        return;
+    ProcessInfo* crrnt = head->next;
+    int cpuTicks = GetCPUTicks();
+    while(crrnt)
+    {
+        crrnt->nbTicksB = ReadStat(crrnt->pid);
+        crrnt->cpuPer = CalculCPUPer(crrnt, cpuTicks);
+        crrnt = crrnt->next;
+    }
+}
+
+double CalculCPUPer(ProcessInfo* process, int cpuTicks)
+{
+    if(process->nbTicksB < process->nbTicksA)
+        return 0;
+    
+    return 100 * (double)(process->nbTicksB - process->nbTicksA) / cpuTicks;
+}
+
+void PrintProcesses(ProcessInfo* head)
+{
+     if(!head)
+        return;
+    ProcessInfo* crrnt = head->next;
+    while(crrnt)
+    {
+        printf("PROCESS: %s, PID: %d, STATE: %c, NBTicks: %lu, Memory: %lu, CPU USAGE: %f\n", crrnt->name, crrnt->pid, crrnt->state, crrnt->nbTicksB, crrnt->memoryInsideRAM, crrnt->cpuPer);
+        crrnt = crrnt->next;
+    }
 }
 
 void FreeProcessList(ProcessInfo* head)

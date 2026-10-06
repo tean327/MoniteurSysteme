@@ -5,6 +5,8 @@
 
 #include<stdio.h>
 #include<stdlib.h>
+#include <unistd.h>
+
 
 int main(void)
 {
@@ -25,6 +27,13 @@ int main(void)
     printf("CPU: %f%%\n", ReturnCPUPourc());
     free(memInfo);
 
-    GetProcessList();
+    ProcessInfo *head = GetProcessList();
+    sleep(1);
+    if(head)
+    {
+        GetTicksB(head);
+        PrintProcesses(head);
+        FreeProcessList(head);
+    }
     return 0;
 }
