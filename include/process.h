@@ -13,7 +13,7 @@ typedef struct processInfo{
 }ProcessInfo;
 
 ProcessInfo* GetProcessList();
-int AddEndProcessList(ProcessInfo* head, ProcessInfo* newNode);
+int AddEndProcessList(ProcessInfo* head, ProcessInfo* newNode, int *i);
 void FreeProcessList(ProcessInfo* head);
 unsigned long GetMemoryInsideRAM(int PID);
 unsigned long ReadStat(int PID);

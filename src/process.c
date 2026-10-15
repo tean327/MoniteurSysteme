@@ -30,6 +30,8 @@ ProcessInfo *GetProcessList()
     char buffer[500];
     fgets(buffer, sizeof(buffer), pipe);
 
+    //For debug
+    int a = 0;
 
     while (fgets(buffer, sizeof(buffer), pipe) != NULL) 
     {
@@ -49,7 +51,8 @@ ProcessInfo *GetProcessList()
             process->nbTicksA = ReadStat(process->pid);
             process->memoryInsideRAM = GetMemoryInsideRAM(process->pid);
 
-            if(!AddEndProcessList(head, process))
+    
+            if(!AddEndProcessList(head, process, &a))
             {   
                 free(process->name);
                 free(process);
@@ -63,8 +66,10 @@ ProcessInfo *GetProcessList()
     return head;
 }
 
-int AddEndProcessList(ProcessInfo* head, ProcessInfo* newNode)
+int AddEndProcessList(ProcessInfo* head, ProcessInfo* newNode, int *i)
 {
+    printf("Hello %d\n", ++(*i));
+
     if(!head || !newNode)
     {
         return 0;
@@ -106,7 +111,7 @@ unsigned long GetMemoryInsideRAM(int PID)
     return memory;
 }
 
-unsigned long  ReadStat(int PID)
+unsigned long ReadStat(int PID)
 {
     char path[50];
     snprintf(path, sizeof(path), "/proc/%d/stat", PID);
@@ -166,18 +171,15 @@ double CalculCPUPer(ProcessInfo* process, int cpuTicks)
 
 void PrintProcesses(ProcessInfo* head)
 {
-     if(!head)
+     if(!head || !head->next)
         return;
+
     ProcessInfo* crrnt = head->next;
-    // while(crrnt)
-    // {
-    //     usleep(100000);
-    //     printf("PROCESS: %s, PID: %d, STATE: %c, NBTicks: %lu, Memory: %lu, CPU USAGE: %f\n", crrnt->name, crrnt->pid, crrnt->state, crrnt->nbTicksB, crrnt->memoryInsideRAM, crrnt->cpuPer);
-    //     crrnt = crrnt->next;
-    // }
+
     ProcessInfo** sorted = SortByUsage(head); 
     for(int i = 0; i < 15; i++)
     {
+        usleep(100000);
         printf("PROCESS: %s, PID: %d, STATE: %c, NBTicks: %lu, Memory: %lu, CPU USAGE: %f\n", sorted[i]->name, sorted[i]->pid, sorted[i]->state, sorted[i]->nbTicksB, sorted[i]->memoryInsideRAM, sorted[i]->cpuPer);
     }
 }
@@ -190,6 +192,9 @@ ProcessInfo** SortByUsage(ProcessInfo* head)
     for(int i = 0; i < 15; i++)
     {
         sorted[i] = (ProcessInfo*)malloc(sizeof(ProcessInfo));
+        sorted[i]->pid = i;
+        sorted[i]->cpuPer = 0.0;
+        sorted[i]->name = NULL;
     }
 
     if(!head)
@@ -199,7 +204,7 @@ ProcessInfo** SortByUsage(ProcessInfo* head)
     {
         for(int i = 0; i < 15; i++)
         {
-            if(crrnt->cpuPer > sorted[i]->cpuPer)
+            if(crrnt->cpuPer >= sorted[i]->cpuPer || (crrnt->cpuPer == sorted[i]->cpuPer && crrnt->memoryInsideRAM > sorted[i]->memoryInsideRAM) || sorted[i]->name == NULL)
             {
                 ProcessInfo* tmp = sorted[i];
                 sorted[i] = crrnt;
